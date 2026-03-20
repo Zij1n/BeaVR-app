@@ -71,3 +71,10 @@ Assets/AssetStoreTools*
 *.psd
 *.mp4
 *.mov
+
+# Keep Unity package imports lean: track only the DLLs Unity needs and the .meta files
+# that define importer settings/guids. Ignore the rest of the extracted NuGet payload.
+BeaVR-Unity/Assets/Packages/**
+!BeaVR-Unity/Assets/Packages/**/
+!BeaVR-Unity/Assets/Packages/**/*.meta
+!BeaVR-Unity/Assets/Packages/**/*.dll

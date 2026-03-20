@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,20 @@ using Unity.XR.CoreUtils;
 
 public class GestureDetectorXR : MonoBehaviour
 {
+	struct HandJointPoseData
+	{
+		public Vector3 Position;
+		public Quaternion Rotation;
+		public bool IsTracked;
+
+		public HandJointPoseData(Vector3 position, Quaternion rotation, bool isTracked)
+		{
+			Position = position;
+			Rotation = rotation;
+			IsTracked = isTracked;
+		}
+	}
+
 	// XR / Hands (no XROrigin; using world space or OVRHand)
 	private XRHandSubsystem _handSubsystem;
 
@@ -115,16 +130,42 @@ public class GestureDetectorXR : MonoBehaviour
 		}
 	}
 
-	public static string SerializeVector3List(List<Vector3> gestureData)
+	static string SerializeJointPoseList(List<HandJointPoseData> gestureData)
 	{
-		string vectorString = "";
-		foreach (Vector3 vec in gestureData)
-			vectorString = vectorString + vec.x + "," + vec.y + "," + vec.z + "|";
+		var builder = new StringBuilder(gestureData.Count * 64);
+		for (int i = 0; i < gestureData.Count; i++)
+		{
+			if (i > 0)
+			{
+				builder.Append('|');
+			}
 
-		if (vectorString.Length > 0)
-			vectorString = vectorString.Substring(0, vectorString.Length - 1) + ":";
+			AppendFloat(builder, gestureData[i].Position.x);
+			builder.Append(',');
+			AppendFloat(builder, gestureData[i].Position.y);
+			builder.Append(',');
+			AppendFloat(builder, gestureData[i].Position.z);
+			builder.Append(',');
+			AppendFloat(builder, gestureData[i].Rotation.x);
+			builder.Append(',');
+			AppendFloat(builder, gestureData[i].Rotation.y);
+			builder.Append(',');
+			AppendFloat(builder, gestureData[i].Rotation.z);
+			builder.Append(',');
+			AppendFloat(builder, gestureData[i].Rotation.w);
+		}
 
-		return vectorString;
+		if (builder.Length > 0)
+		{
+			builder.Append(':');
+		}
+
+		return builder.ToString();
+	}
+
+	static void AppendFloat(StringBuilder builder, float value)
+	{
+		builder.Append(value.ToString(CultureInfo.InvariantCulture));
 	}
 
     void Update()
@@ -272,6 +313,12 @@ public class GestureDetectorXR : MonoBehaviour
 		return pos;
 	}
 
+	Quaternion ToWorldRotation(Quaternion rotation)
+	{
+		// Using OVR Camera Rig: tracking rotation is already in world space for this project.
+		return rotation;
+	}
+
 	void SendHandDataThroughController(string typeMarker)
 	{
 		try
@@ -280,16 +327,16 @@ public class GestureDetectorXR : MonoBehaviour
 				return;
 
 			// Right hand
-			List<Vector3> rightHandGestureData = new List<Vector3>();
-			CollectHandJointPositions(_handSubsystem.rightHand, rightHandGestureData);
-			string rightHandDataString = SerializeVector3List(rightHandGestureData);
+			List<HandJointPoseData> rightHandGestureData = new List<HandJointPoseData>();
+			CollectHandJointPoseData(_handSubsystem.rightHand, rightHandGestureData);
+			string rightHandDataString = SerializeJointPoseList(rightHandGestureData);
 			rightHandDataString = typeMarker + ":" + rightHandDataString;
 			NetMQController.Instance.SendMessage("RightHand", rightHandDataString);
 
 			// Left hand
-			List<Vector3> leftHandGestureData = new List<Vector3>();
-			CollectHandJointPositions(_handSubsystem.leftHand, leftHandGestureData);
-			string leftHandDataString = SerializeVector3List(leftHandGestureData);
+			List<HandJointPoseData> leftHandGestureData = new List<HandJointPoseData>();
+			CollectHandJointPoseData(_handSubsystem.leftHand, leftHandGestureData);
+			string leftHandDataString = SerializeJointPoseList(leftHandGestureData);
 			leftHandDataString = typeMarker + ":" + leftHandDataString;
 			NetMQController.Instance.SendMessage("LeftHand", leftHandDataString);
 
@@ -298,18 +345,18 @@ public class GestureDetectorXR : MonoBehaviour
 			{
 				int rTotal = rightHandGestureData.Count;
 				int lTotal = leftHandGestureData.Count;
-				int rTracked = CountNonZeroJoints(rightHandGestureData);
-				int lTracked = CountNonZeroJoints(leftHandGestureData);
+				int rTracked = CountTrackedJoints(rightHandGestureData);
+				int lTracked = CountTrackedJoints(leftHandGestureData);
 				bool countsChanged = rTracked != _lastRightTrackedCount || lTracked != _lastLeftTrackedCount;
 				bool modeChanged = _lastModeLogged != typeMarker;
 				bool intervalElapsed = Time.time - _lastKeypointLogTime > Mathf.Max(0.1f, KeypointLogIntervalSeconds);
 				if (countsChanged || modeChanged || intervalElapsed)
 				{
 					int sampleIndex = Mathf.Min(10, Mathf.Max(0, rTotal - 1)); // prefer IndexTip if available
-					Vector3 rSample = rTotal > 0 ? rightHandGestureData[sampleIndex] : Vector3.zero;
-					Vector3 lSample = lTotal > 0 ? leftHandGestureData[sampleIndex] : Vector3.zero;
+					HandJointPoseData rSample = rTotal > 0 ? rightHandGestureData[sampleIndex] : default;
+					HandJointPoseData lSample = lTotal > 0 ? leftHandGestureData[sampleIndex] : default;
 					Debug.Log(
-						$"GestureDetectorXR: sent {typeMarker} | RH joints={rTotal} tracked={rTracked} sample={FormatVec(rSample)} | LH joints={lTotal} tracked={lTracked} sample={FormatVec(lSample)}");
+						$"GestureDetectorXR: sent {typeMarker} | RH joints={rTotal} tracked={rTracked} samplePos={FormatVec(rSample.Position)} sampleRot={FormatQuat(rSample.Rotation)} | LH joints={lTotal} tracked={lTracked} samplePos={FormatVec(lSample.Position)} sampleRot={FormatQuat(lSample.Rotation)}");
 					_lastKeypointLogTime = Time.time;
 					_lastRightTrackedCount = rTracked;
 					_lastLeftTrackedCount = lTracked;
@@ -323,29 +370,32 @@ public class GestureDetectorXR : MonoBehaviour
 		}
 	}
 
-	void CollectHandJointPositions(XRHand hand, List<Vector3> outPositions)
+	void CollectHandJointPoseData(XRHand hand, List<HandJointPoseData> outJointData)
 	{
-		outPositions.Clear();
+		outJointData.Clear();
 		for (int i = 0; i < k_JointOrder.Length; i++)
 		{
 			var joint = hand.GetJoint(k_JointOrder[i]);
 			if (joint.TryGetPose(out Pose pose))
 			{
-				outPositions.Add(ToWorldPosition(pose.position));
+				outJointData.Add(new HandJointPoseData(
+					ToWorldPosition(pose.position),
+					ToWorldRotation(pose.rotation),
+					true));
 			}
 			else
 			{
-				outPositions.Add(Vector3.zero);
+				outJointData.Add(new HandJointPoseData(Vector3.zero, Quaternion.identity, false));
 			}
 		}
 	}
 
-	int CountNonZeroJoints(List<Vector3> positions)
+	int CountTrackedJoints(List<HandJointPoseData> joints)
 	{
 		int count = 0;
-		for (int i = 0; i < positions.Count; i++)
+		for (int i = 0; i < joints.Count; i++)
 		{
-			if (positions[i] != Vector3.zero) count++;
+			if (joints[i].IsTracked) count++;
 		}
 		return count;
 	}
@@ -353,6 +403,11 @@ public class GestureDetectorXR : MonoBehaviour
 	string FormatVec(Vector3 v)
 	{
 		return $"({v.x:F3},{v.y:F3},{v.z:F3})";
+	}
+
+	string FormatQuat(Quaternion q)
+	{
+		return $"({q.x:F3},{q.y:F3},{q.z:F3},{q.w:F3})";
 	}
 
 	void SendResolutionThroughController()

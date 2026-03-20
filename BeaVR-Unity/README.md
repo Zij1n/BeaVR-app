@@ -40,7 +40,7 @@ NetMQController.SendMessage()
                        GraphStream
 ```
 
-**Message Format**: `"x,y,z,x,y,z,..."` (78 floats per hand)
+**Message Format**: `"mode:px,py,pz,qx,qy,qz,qw|..."` (26 joints x 7 floats = 182 floats per hand)
 
 ---
 
@@ -48,7 +48,7 @@ NetMQController.SendMessage()
 
 | Component | Purpose |
 |-----------|---------|
-| `GestureDetectorXR.cs` | XR Hands tracking → NetMQ |
+| `GestureDetectorXR.cs` | XR Hands tracking (position + rotation) → NetMQ |
 | `NetMQController.cs` | ZeroMQ pub/sub messaging |
 | `NetworkManager.cs` | Load `Network.json` config |
 | `CameraOneStreamer.cs` | Receive & display camera |
