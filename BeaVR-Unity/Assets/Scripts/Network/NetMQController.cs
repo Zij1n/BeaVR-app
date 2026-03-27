@@ -534,6 +534,7 @@ public class NetworkSettings
     public string leftkeyptPortNum;
     public string camPortNum;
     public string graphPortNum;
+    public string featherPortNum;
     public string resolutionPortNum;
     public string PausePortNum;
     public string LeftPausePortNum;

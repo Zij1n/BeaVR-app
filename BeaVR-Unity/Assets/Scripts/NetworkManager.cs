@@ -10,6 +10,7 @@ public class NetworkConfiguration
     public string leftkeyptPortNum;
     public string camPortNum;
     public string graphPortNum;
+    public string featherPortNum;
     public string resolutionPortNum;
     public string PausePortNum;
     public string LeftPausePortNum;
@@ -79,6 +80,14 @@ public class NetworkManager : MonoBehaviour
             return "tcp://:";
         else
             return "tcp://" + netConfig.IPAddress + ":" + netConfig.graphPortNum;
+    }
+
+    public string getFeatherAddress()
+    {
+        if (IPNotFound)
+            return "tcp://:";
+        else
+            return "tcp://" + netConfig.IPAddress + ":" + netConfig.featherPortNum;
     }
 
     public string getResolutionAddress()

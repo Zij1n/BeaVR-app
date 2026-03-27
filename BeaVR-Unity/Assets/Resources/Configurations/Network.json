@@ -4,6 +4,7 @@
   "leftkeyptPortNum": "8110",
   "camPortNum": "10505",
   "graphPortNum": "15001",
+  "featherPortNum": "15102",
   "resolutionPortNum": "8095",
   "PausePortNum": "8100",
   "LeftPausePortNum": "8107",
