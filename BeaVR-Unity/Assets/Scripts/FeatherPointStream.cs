@@ -28,7 +28,7 @@ public sealed class FeatherPointStream : MonoBehaviour
     const string NetworkLoaderObjectName = "NetworkConfigsLoader";
     const string TrackingSpaceObjectName = "TrackingSpace";
     const string FeatherRootName = "FeatherGuidanceRoot";
-    const int MaxSupportedPoints = 64;
+    const int InitialPoolCapacity = 64;
 
     static FeatherPointStream _instance;
 
@@ -37,7 +37,7 @@ public sealed class FeatherPointStream : MonoBehaviour
     [SerializeField] private bool enablePayloadLogging = false;
 
     private readonly object _messageLock = new object();
-    private readonly List<FeatherPointVisual> _pointPool = new List<FeatherPointVisual>(MaxSupportedPoints);
+    private readonly List<FeatherPointVisual> _pointPool = new List<FeatherPointVisual>(InitialPoolCapacity);
     private readonly MaterialPropertyBlock _propertyBlock = new MaterialPropertyBlock();
 
     private NetworkManager _networkManager;
@@ -417,10 +417,9 @@ public sealed class FeatherPointStream : MonoBehaviour
         }
 
         int requestedCount = payload.points != null ? payload.points.Length : 0;
-        int clampedCount = Mathf.Min(requestedCount, MaxSupportedPoints);
-        EnsurePoolSize(clampedCount);
+        EnsurePoolSize(requestedCount);
 
-        for (int index = 0; index < clampedCount; index++)
+        for (int index = 0; index < requestedCount; index++)
         {
             FeatherPointDefinition point = payload.points[index];
             FeatherPointVisual visual = _pointPool[index];
@@ -443,16 +442,11 @@ public sealed class FeatherPointStream : MonoBehaviour
             visual.Renderer.SetPropertyBlock(_propertyBlock);
         }
 
-        for (int index = clampedCount; index < _pointPool.Count; index++)
+        for (int index = requestedCount; index < _pointPool.Count; index++)
         {
             FeatherPointVisual visual = _pointPool[index];
             visual.Renderer.SetPropertyBlock(null);
             visual.GameObject.SetActive(false);
-        }
-
-        if (requestedCount > MaxSupportedPoints)
-        {
-            Debug.LogWarning($"FeatherPointStream: Received {requestedCount} feather points, clamped to {MaxSupportedPoints}.");
         }
     }
 
