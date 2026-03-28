@@ -2507,6 +2507,7 @@ GameObject:
   - component: {fileID: 564264850}
   - component: {fileID: 564264849}
   - component: {fileID: 564264848}
+  - component: {fileID: 564264851}
   m_Layer: 5
   m_Name: IP Input Field (TMP)
   m_TagString: Untagged
@@ -2615,7 +2616,7 @@ MonoBehaviour:
   m_OnSelect:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 564264851}
         m_TargetAssemblyTypeName: VirtualKeyboardTMPBinder, Assembly-CSharp
         m_MethodName: OpenKeyboard
         m_Mode: 1
@@ -2630,7 +2631,7 @@ MonoBehaviour:
   m_OnDeselect:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 564264851}
         m_TargetAssemblyTypeName: VirtualKeyboardTMPBinder, Assembly-CSharp
         m_MethodName: CloseKeyboard
         m_Mode: 1
@@ -2710,6 +2711,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 564264846}
   m_CullTransparentMesh: 1
+--- !u!114 &564264851
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 564264846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efb402edac55daa46873e1b3924b2e38, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualKeyboardTMPBinder
+  keyboard: {fileID: 0}
+  targetField: {fileID: 564264848}
+  useSystemKeyboardFallback: 1
+  placeholderText: Server IP
 --- !u!1 &566981341
 GameObject:
   m_ObjectHideFlags: 0

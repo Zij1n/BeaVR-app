@@ -6,6 +6,7 @@ public class StartTeleopButton : MonoBehaviour
     [Header("References")]
     public NetworkManager networkManager; // optional, will auto-find if null
     public CanvasSwitch canvasSwitch;     // target canvas switcher
+    public ToastManager toastManager;     // optional, will auto-find if null
 
     [Header("Behavior")]
     public float connectTimeoutSeconds = 2.0f;
@@ -21,6 +22,7 @@ public class StartTeleopButton : MonoBehaviour
         if (networkManager == null)
         {
             Debug.LogError("[StartTeleop] NetworkManager not found.");
+            ResolveToastManager()?.Error("Network manager not found.");
             return;
         }
 
@@ -29,6 +31,7 @@ public class StartTeleopButton : MonoBehaviour
         if (string.IsNullOrEmpty(ip))
         {
             Debug.LogWarning("[StartTeleop] No IP set in PlayerPrefs[ServerIP].");
+            ResolveToastManager()?.Error("Set the server IP first.");
             return;
         }
 
@@ -58,15 +61,30 @@ public class StartTeleopButton : MonoBehaviour
         if (ok && canvasSwitch != null)
         {
             canvasSwitch.Switch();
+            ResolveToastManager()?.Success("Connected.");
 
 			// After switching, set streaming active (relative by default)
-			var gd = FindObjectOfType<GestureDetectorXR>();
+			var gd = FindFirstObjectByType<GestureDetectorXR>();
 			if (gd != null)
 			{
 				gd.ActivateStreaming("relative");
 			}
         }
+        else if (!ok)
+        {
+            ResolveToastManager()?.Error("Connection failed. Check IP and server.");
+        }
+    }
+
+    private ToastManager ResolveToastManager()
+    {
+        if (toastManager != null)
+        {
+            return toastManager;
+        }
+
+        toastManager = FindFirstObjectByType<ToastManager>();
+        return toastManager;
     }
 }
-
 
